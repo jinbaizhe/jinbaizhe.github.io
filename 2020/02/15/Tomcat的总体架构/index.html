@@ -46,12 +46,12 @@
   };
 </script>
 
-  <meta name="description" content="简介本文主要介绍Tomcat的总体设计。会从最简单的架构设计开始讲解，通过不断的迭代，最后渐进式的得到Tomcat的最终架构，为后面进行具体的源码分析打下基础。">
+  <meta name="description" content="简介本文主要介绍Tomcat总的架构设计。会从最简单的架构模型开始讲解，通过不断的迭代，最后渐进式的得到Tomcat的最终架构，从而为之后的源码分析打下基础。在这里，可能很多概念只是大概的提了一下，更深层次的分析会留到后续再做。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Tomcat的总体架构">
 <meta property="og:url" content="http://yoursite.com/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/index.html">
 <meta property="og:site_name" content="Parker&#39;s blog">
-<meta property="og:description" content="简介本文主要介绍Tomcat的总体设计。会从最简单的架构设计开始讲解，通过不断的迭代，最后渐进式的得到Tomcat的最终架构，为后面进行具体的源码分析打下基础。">
+<meta property="og:description" content="简介本文主要介绍Tomcat总的架构设计。会从最简单的架构模型开始讲解，通过不断的迭代，最后渐进式的得到Tomcat的最终架构，从而为之后的源码分析打下基础。在这里，可能很多概念只是大概的提了一下，更深层次的分析会留到后续再做。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://yoursite.com/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEServer.png">
 <meta property="og:image" content="http://yoursite.com/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEConnector%E5%92%8CEngine.png">
@@ -63,7 +63,7 @@
 <meta property="og:image" content="http://yoursite.com/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEPipeline.png">
 <meta property="og:image" content="http://yoursite.com/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BELifecycle.png">
 <meta property="article:published_time" content="2020-02-15T12:34:08.000Z">
-<meta property="article:modified_time" content="2020-02-15T16:33:23.925Z">
+<meta property="article:modified_time" content="2020-02-16T12:56:47.003Z">
 <meta property="article:author" content="Parker">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://yoursite.com/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEServer.png">
@@ -234,7 +234,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-02-16 00:33:23" itemprop="dateModified" datetime="2020-02-16T00:33:23+08:00">2020-02-16</time>
+                <time title="修改时间：2020-02-16 20:56:47" itemprop="dateModified" datetime="2020-02-16T20:56:47+08:00">2020-02-16</time>
               </span>
 
           
@@ -248,18 +248,48 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>本文主要介绍Tomcat的总体设计。会从最简单的架构设计开始讲解，通过不断的迭代，最后渐进式的得到Tomcat的最终架构，为后面进行具体的源码分析打下基础。</p>
+        <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>本文主要介绍Tomcat总的架构设计。会从最简单的架构模型开始讲解，通过不断的迭代，最后渐进式的得到Tomcat的最终架构，从而为之后的源码分析打下基础。在这里，可能很多概念只是大概的提了一下，更深层次的分析会留到后续再做。</p>
 <a id="more"></a>
-<h1 id="整体结构"><a href="#整体结构" class="headerlink" title="整体结构"></a>整体结构</h1><h2 id="版本1（关键词：Server"><a href="#版本1（关键词：Server" class="headerlink" title="版本1（关键词：Server)"></a>版本1（关键词：Server)</h2><p>Tomcat的工作原理：接收来自客户端的请求（Tomcat实际上启动了一个ServerSocket，用来监听来自某个端口的请求信息），并根据请求信息进行对应的具体处理，最后将处理结果返回给客户端。<br>在版本1中，可以将Tomcat的全部功能用一个Server类来简单表示，其中start()方法用来启动Server，stop()方法用来关闭Server。</p>
-<p>TODO<br><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEServer.png" alt="Server"></p>
-<h2 id="版本2（关键词：Connector和Engine"><a href="#版本2（关键词：Connector和Engine" class="headerlink" title="版本2（关键词：Connector和Engine)"></a>版本2（关键词：Connector和Engine)</h2><p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEConnector%E5%92%8CEngine.png" alt="Connector和Engine"></p>
-<h2 id="版本3（关键词：Service"><a href="#版本3（关键词：Service" class="headerlink" title="版本3（关键词：Service)"></a>版本3（关键词：Service)</h2><p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEService.png" alt="Service"></p>
-<h2 id="版本4（关键词：Context）"><a href="#版本4（关键词：Context）" class="headerlink" title="版本4（关键词：Context）"></a>版本4（关键词：Context）</h2><p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEContext.png" alt="Context"></p>
-<h2 id="版本5（关键词：Wrapper）"><a href="#版本5（关键词：Wrapper）" class="headerlink" title="版本5（关键词：Wrapper）"></a>版本5（关键词：Wrapper）</h2><p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEWrapper.png" alt="Wrapper"></p>
-<h2 id="版本6（关键词：Host）"><a href="#版本6（关键词：Host）" class="headerlink" title="版本6（关键词：Host）"></a>版本6（关键词：Host）</h2><p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEHost.png" alt="Host"></p>
-<h2 id="版本7（关键词：Container）"><a href="#版本7（关键词：Container）" class="headerlink" title="版本7（关键词：Container）"></a>版本7（关键词：Container）</h2><p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEContainer.png" alt></p>
-<h1 id="重要设计"><a href="#重要设计" class="headerlink" title="重要设计"></a>重要设计</h1><h2 id="版本8（关键词：Pipeline和Valve）"><a href="#版本8（关键词：Pipeline和Valve）" class="headerlink" title="版本8（关键词：Pipeline和Valve）"></a>版本8（关键词：Pipeline和Valve）</h2><p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEPipeline.png" alt></p>
-<h2 id="版本9（关键词：Lifecycle）"><a href="#版本9（关键词：Lifecycle）" class="headerlink" title="版本9（关键词：Lifecycle）"></a>版本9（关键词：Lifecycle）</h2><p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BELifecycle.png" alt></p>
+<h1 id="整体结构"><a href="#整体结构" class="headerlink" title="整体结构"></a>整体结构</h1><h2 id="版本1（关键词：Server"><a href="#版本1（关键词：Server" class="headerlink" title="版本1（关键词：Server)"></a>版本1（关键词：Server)</h2><p>Tomcat的工作原理：接收来自客户端的请求（Tomcat实际上是启动了一个<strong>ServerSocket</strong>，用来监听来自某个端口的请求信息），并根据请求信息进行对应的具体处理，最后将处理结果返回给客户端。</p>
+<p>在版本1中，可以将Tomcat的全部功能用一个<strong>Server</strong>类来简单表示，其中start()方法用来启动Server，stop()方法用来关闭Server。</p>
+<p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEServer.png" alt="Server"></p>
+<h2 id="版本2（关键词：Connector和Engine"><a href="#版本2（关键词：Connector和Engine" class="headerlink" title="版本2（关键词：Connector和Engine)"></a>版本2（关键词：Connector和Engine)</h2><p>根据Tomcat的功能特点，我们可以对其划分成两部分模块：</p>
+<ol>
+<li>接收客户端的请求，以及把处理结果返回给客户端，该模块取名为连接器。</li>
+<li>根据客户端的请求信息进行对应的业务处理，该模块取名为引擎。</li>
+</ol>
+<p>好处：将接收请求和请求处理解耦开来，在结构划分上会更加清晰。此外，从结果反推来看，Tomcat不仅支持HTTP协议的请求，同时也支持<a href="https://tomcat.apache.org/connectors-doc/ajp/ajpv13a.html" target="_blank" rel="noopener">AJP协议</a>。这样模块划分带来的结果就是，当切换成其它的请求协议时，有关请求处理的模块不用变动，只需要换一个对应协议的连接器就可以了。</p>
+<p>现在我们来看下解耦后的类图，<strong>Connector</strong>类就是上面提到的连接器，用来接收客户端的请求，并将请求的处理结果返回给客户端。而<strong>Engine</strong>类就是引擎，它的职责是将从连接器那边传来的请求信息进行具体的处理，并将处理结果交还给连接器。</p>
+<p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEConnector%E5%92%8CEngine.png" alt="Connector和Engine"></p>
+<h2 id="版本3（关键词：Service"><a href="#版本3（关键词：Service" class="headerlink" title="版本3（关键词：Service)"></a>版本3（关键词：Service)</h2><p>我们会发现版本2这样的设计，存在一个问题：Connector和Engine怎么关联起来？也就是说，Connector怎么知道，要把某一个的请求，交给哪个Engine来处理？</p>
+<p>一个比较容易想的的办法就是，建立一个映射类，从而将Connector与Engine关联起来。但Tomcat在这里用了另一个办法：将多个Connector和一个Engine划分为一组，在这些Connector中，都会将请求信息交由同一个Engine。而这个组，可以抽象为一个服务。</p>
+<p>在修改后的类图中，我们可以看到，一个<strong>Service</strong>类可以包含多个Connector和一个Engine。在这个Service里的所有Connector，都会将请求信息交由Service里唯一的一个Engine来进行处理。</p>
+<p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEService.png" alt="Service"></p>
+<h2 id="版本4（关键词：Context）"><a href="#版本4（关键词：Context）" class="headerlink" title="版本4（关键词：Context）"></a>版本4（关键词：Context）</h2><p>接下来将继续对Engine进行分析。我们知道，Tomcat作为一个应用服务器，它可以被用来加载我们自己编写的web应用程序。当一个来自客户端的请求到达Tomcat后，请求信息最终还是会交由到web应用程序来进行具体的业务处理。那么，Tomcat该如何来管理web应用程序呢？</p>
+<p>在版本4的类图中，每个web应用程序会被抽象成一个<strong>Context</strong>类，每个Context类相互之间独立。而在一个Engine类（引擎）下，可以加载多个Context类（web应用程序）。</p>
+<p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEContext.png" alt="Context"></p>
+<h2 id="版本5（关键词：Wrapper）"><a href="#版本5（关键词：Wrapper）" class="headerlink" title="版本5（关键词：Wrapper）"></a>版本5（关键词：Wrapper）</h2><p>在我们的web应用程序中，一般会有很多个Servlet（JSP其实也是最终会被转换生成一个对应的Servlet）。换句话说，Servlet组成了我们的web应用程序。而对Tomcat发起的请求，最终其实就是交由web应用程序中对应的Servlet来执行业务处理。</p>
+<p>那么，在web应用程序下（Context类），还可以继续对其做划分。在版本5的类图中，我们将每个Servlet都视为一个<strong>Wrapper</strong>类，用Wrapper类来对web应用程序中的Servlet做抽象。</p>
+<p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEWrapper.png" alt="Wrapper"></p>
+<h2 id="版本6（关键词：Host）"><a href="#版本6（关键词：Host）" class="headerlink" title="版本6（关键词：Host）"></a>版本6（关键词：Host）</h2><p>讲个题外话，去年年底，在和别的小组做第一期Tomcat的技术分享时，发现他们对虚拟主机的概念不是很理解（也有很大可能是我表达的不够清晰），不知道这次能不能够说明白哈哈哈。</p>
+<p>首先，有这么个场景：你只有1台服务器，有两个域名（<a href="http://www.google.com和www.ibeta.tech），有两个web应用(google应用和ibeta的应用)。但你想在这一台服务器上，部署这两个应用，同时分别对应这两个域名。" target="_blank" rel="noopener">www.google.com和www.ibeta.tech），有两个web应用(google应用和ibeta的应用)。但你想在这一台服务器上，部署这两个应用，同时分别对应这两个域名。</a></p>
+<p>第一步：首先要做的事，就是把这两个域名都解析到这唯一一台服务器主机的IP上。</p>
+<p>第二步，我的想法是：启动两个Tomcat实例（两个Tomcat监听的端口号设置为不同），再由Nginx配置两个Server，分布对应两个域名，并分布设置将请求转发到不同的Tomcat实例中。</p>
+<p>能不能只通过使用Tomcat，不用Nginx来实现呢？</p>
+<p>实际上是可以的，就是通过接下来要讲的<strong>Host</strong>（<strong>虚拟主机</strong>）来实现。</p>
+<p>Tomcat将每个域名抽象成一个Host（虚拟主机），每个Host下可以有多个web应用程序，而一个Service下也可以有多个Host。这么设计的话，Tomcat便可在只监听一个端口的情况下，根据请求信息里域名的不同，将请求信息转发给对应Host下的web应用程序来处理，如此便实现了，只有一台物理服务器主机的情况下，模拟出有多台服务器的效果。</p>
+<p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEHost.png" alt="Host"></p>
+<h2 id="版本7（关键词：Container）"><a href="#版本7（关键词：Container）" class="headerlink" title="版本7（关键词：Container）"></a>版本7（关键词：Container）</h2><p>回顾一下我们之前的类图，有个特点要总结一下：从最顶端的Engine类，到最底层的Wrapper类，都有这么一个特点：上层的类可以有多个直接下层的类，并且它们的作用都是用来处理请求信息的。</p>
+<p>举个例子，Engine可以有多个Host（之后会提到，Engine类和Wrapper类比较特殊，Engine类是最顶层的，没有上层，而Wrapper类是最底层的，没有下层），Engine可以将请求信息交给它下面的一个Host来处理，而这个Host可以将请求信息交由Host下面的Context来处理，而Context还可以将请求信息交由Wrapper来处理。</p>
+<p>这时，我们可以引入<strong>容器</strong>（<strong>Container</strong>）的概念了：我们可以把版本6的类图中出现的Engine、Host、Context、Wrapper都看作是容器，它们可以有自己的子容器。例如，Context容器可以有多个Wrapper容器。这么做的一大好处就是，可以把一些共有的方法逻辑和属性抽象到Container中。</p>
+<p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEContainer.png" alt></p>
+<h1 id="重要设计"><a href="#重要设计" class="headerlink" title="重要设计"></a>重要设计</h1><h2 id="版本8（关键词：Pipeline和Valve）"><a href="#版本8（关键词：Pipeline和Valve）" class="headerlink" title="版本8（关键词：Pipeline和Valve）"></a>版本8（关键词：Pipeline和Valve）</h2><p>Tomcat在每个容器中都使用了<strong>Pipeline</strong>和<strong>Valve</strong>来增强可扩展性。Pipeline和Valve的设计类似于设计模式中的责任链。举个例子，Pipeline和Value的关系就像是管道和管道上的门阀。当一个请求来时，请求要经过Pipeline上的每一个Valve后才能最终被处理掉。</p>
+<p>在Tomcat中，Engine、Host、Context、Wrapper这些容器都有各自对应的一个Pipeline，来增强它的可扩展性。此外，Tomcat的Pipeline有一个特点，就是其中的Valve分为两种类型，一种是basic valve，每个Pipeline有且只有1个basic valve，容器中真正的处理逻辑就是在basic valve中执行。另外一种是普通的Valve，数量可以有多个。区别在与执行顺序上，basic value总是最后才会被执行（一定在普通的valve执行完后才会被执行），而普通的value的执行顺序与添加时候的顺序有关。</p>
+<p>当我们需要对某个容器增加功能时，可以通过增加Valve的形式，来完成其功能的扩展。</p>
+<p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BEPipeline.png" alt></p>
+<h2 id="版本9（关键词：Lifecycle）"><a href="#版本9（关键词：Lifecycle）" class="headerlink" title="版本9（关键词：Lifecycle）"></a>版本9（关键词：Lifecycle）</h2><p>在Tomcat中，有非常多的组件需要有启动、关闭的功能。像Connector，在启动时需要创建ServerSocket来监听请求消息，在关闭时，也需要进行关闭ServerSocket.</p>
+<p>在Tomcat中，这些启动、关闭等方法被抽象成了一个<strong>生命周期</strong>的接口（<strong>Lifecycle</strong>）。另外，Lifecycle中还加入了状态变更、事件监听器（类似于观察者模式）等功能。在以后的源码分析中还可以看到，正是由于对容器和生命周期的抽象，使得Tomcat以一种非常优雅的方式进行容器的启动。</p>
+<p><img src="/2020/02/15/Tomcat%E7%9A%84%E6%80%BB%E4%BD%93%E6%9E%B6%E6%9E%84/%E6%9E%B6%E6%9E%84%E5%9B%BELifecycle.png" alt></p>
 
     </div>
 
